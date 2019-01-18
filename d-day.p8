@@ -27,7 +27,7 @@ sprstates = {
   ["boom"] = {80,80,80,81,81,81,82,82,82,83,83,83,84,84,84,85,85,85,86,86,86}
 }
 
-levelstates = {{["offset"] = 0, ["overheads"]={{["sprite"] = 10, ["x"] = 56, ["y"] = 88}}}, {["offset"]=128, ["overheads"]={} }}
+levelstates = {{["offset"] = 0, ["nazi_spawn_rate"]= 2, ["overheads"]={{["sprite"] = 10, ["x"] = 56, ["y"] = 88}}}, {["offset"]=128, ["nazi_spawn_rate"]= 2, ["overheads"]={} }}
 
 bullets = {}
 grenades = {}
@@ -391,11 +391,11 @@ function spawn()
 end
 
 function spawn_nazis()
-  local spawny = player.y - 96
+  local spawny = player.y - 104
   if spawny < 0 then
     return
   end
-  for i=0,nazi_spawn_rate[2] do
+  for i=0,current_level.nazi_spawn_rate do
     local spawnx = 16 + (i*(96 / nazi_spawn_rate[2]))
     
     local s = soldierf(5, spawnx, spawny, 1.25, 0.25, 1)
@@ -440,9 +440,13 @@ end
 function end_level(level)
   del_all(bullets)
   del_all(nazis)
-  update_high_scores()
-  _draw = draw_title
-  _update = update_title
+  if level < 3 then
+    init_level(2)
+  else
+    update_high_scores()
+    _draw = draw_title
+    _update = update_title
+  end
 end
 
 function _init()
@@ -460,7 +464,7 @@ function game_update()
   foreach(grenades, update_grenade)
   foreach(booms, update_boom)
   update_soldier(player, btn(0), btn(1), btn(2), btn(3), btn(4), btn(5))
-  add(cam_positions, player.y - 64)
+  add(cam_positions, player.y - 96)
   cam_y = cam_positions[1]
   del(cam_positions, cam_y)
   if player.y < 0 then
@@ -483,12 +487,10 @@ end
 
 function init_level(level)
   current_level = levelstates[level]
-  casualties = 0
-  kills = 0
-  player = spawn()
+  player.y = 488
   cam_x = current_level.offset
   cam_y = 0
-  cam_positions = {player.y - 64, player.y - 64, player.y - 64, player.y - 64, player.y - 64, player.y - 64, player.y - 64}
+  cam_positions = {392, 392, 392, 392, 392, 392, 392}
   spawn_nazis()
 end
 
@@ -512,6 +514,9 @@ function update_title()
   if btn(4) then
     _update = game_update
     _draw = game_draw
+    casualties = 0
+    kills = 0
+    player = spawn()
     init_level(1)
   end
 end
