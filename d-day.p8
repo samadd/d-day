@@ -460,7 +460,7 @@ function beenhit(o, b)
 end
 
 function spawn()
-  return soldierf(1,64,61*8,1.5,0.25, 500)
+  return soldierf(1,64,61*8,1.5,0.25, 10)
 end
 
 function spawn_nazis()
@@ -484,7 +484,7 @@ function spawn_nazis()
 end
 
 function draw_hud()
-  print("kills: "..tostr(kills).." - deaths: "..tostr(casualties).." - h: "..tostr(player.hp), current_level.offset, cam_y + 120, 1)
+  print("kills: "..tostr(kills).." - deaths: "..tostr(casualties).." - h: "..tostr(player.hp), current_level.offset+1, cam_y + 120, 1)
 end
 
 function update_high_scores()
