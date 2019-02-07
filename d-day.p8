@@ -359,12 +359,12 @@ function make_decision(o)
   local xrand = rnd(10)
   local yrand = rnd(10)
   local frand = rnd(10)
-  local decisionthresh = 4
+  local decisionthresh = 3
   if xrand > decisionthresh then
-    if player.x < o.x and o.x > o.confines[1] then
+    if player.x < o.x then
 	    left = true
     end
-    if player.x > o.x and o.x < o.confines[2] then
+    if player.x > o.x then
       right = true
     end
   end
@@ -380,6 +380,17 @@ function make_decision(o)
     fire = true
   end
   update_soldier(o, left, right, up, down, fire)
+end
+
+function jostle(n)
+  local innerJostle = function(n2)
+     local diffx = n.x - n2.x
+     local diffy = n.y - n2.y
+     if abs(diffx) < 4 and abs(diffy) < 8 then
+        if (diffx < 0) then n.x -= 1 else n.x +=1 end
+     end
+  end
+  foreach(nazis, innerJostle)
 end
 
 function update_soldier(o, left, right, up, down, fire1, fire2)
@@ -422,6 +433,7 @@ function update_soldier(o, left, right, up, down, fire1, fire2)
   
   o.x += o.dx
   o.y += o.dy
+  jostle(o)
   o.tick += 1
   if cmap(o) then
     o.x = lx
@@ -515,7 +527,7 @@ end
 function obstacle_in_front(o)
   local offset_x = current_level.offset + o.x + 4
   local x=offset_x / 8
-  local y=(o.y+o.bounds.y2 + 2)/8
+  local y=(o.y+o.bounds.y2 + 4)/8
   local obstacle = fget(mget(x,y), 0) or fget(mget(x,y), 1) or fget(mget(x,y), 2)
   return obstacle
 end
@@ -582,14 +594,14 @@ function spawn_nazis()
   for i=0,current_level.nazi_spawn_rate do
     local spawnx = 16 + (i*(96 / current_level.nazi_spawn_rate))
     
-    local s = soldierf(5, spawnx, spawny, 1.25, 0.25, 1)
+    local s = soldierf(5, spawnx, spawny, 1 + rnd(1), 0.1 + rnd(0.5), 1)
     while cmap(s) do
        s.y = s.y-4
     end
     s.states = sprstates.nazi
     s.state = s.states.standing
     s.shoot_dir = 1
-    s.confines = {max(0, spawnx - 64), min(112, spawnx + 64)}
+    -- s.confines = {max(0, spawnx - 64), min(112, spawnx + 64)}
     add(nazis, s)
   end
 end
@@ -715,7 +727,7 @@ function update_title()
     casualties = 0
     kills = 0
     player = spawn()
-    init_level(3)
+    init_level(1)
   end
 end
 
