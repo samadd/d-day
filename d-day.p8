@@ -235,13 +235,16 @@ function update_cannon(c)
     c.fire = c.f_throttle
   end
   local hit = false
+  local hitters = {}
   local hitcheck = function(b)
     if not hit then
        hit = beenhit(c, b)
+       if hit then add(hitters, b) end
     end
   end
   foreach(booms, hitcheck)
   foreach(bullets, hitcheck)
+  foreach(hitters, function(b) del(bullets, b) end)
   if hit then
     c.hp = c.hp - 1
   end
@@ -384,6 +387,7 @@ end
 
 function jostle(n)
   local innerJostle = function(n2)
+     if n2 == n then return end
      local diffx = n.x - n2.x
      local diffy = n.y - n2.y
      if abs(diffx) < 4 and abs(diffy) < 8 then
@@ -525,10 +529,11 @@ function del_all(entities)
 end
 
 function obstacle_in_front(o)
-  local offset_x = current_level.offset + o.x + 4
-  local x=offset_x / 8
-  local y=(o.y+o.bounds.y2 + 4)/8
-  local obstacle = fget(mget(x,y), 0) or fget(mget(x,y), 1) or fget(mget(x,y), 2)
+  local offset_x = current_level.offset + o.x + 2
+  local x1=offset_x / 8
+  local x2=(offset_x + 4) / 8
+  local y=(o.y+o.bounds.y2 + 5)/8
+  local obstacle = fget(mget(x1,y), 0) or fget(mget(x1,y), 1) or fget(mget(x1,y), 2) or fget(mget(x2,y), 2)
   return obstacle
 end
 
@@ -607,7 +612,9 @@ function spawn_nazis()
 end
 
 function draw_hud()
-  print("kills: "..tostr(kills).." - deaths: "..tostr(casualties).." - h: "..tostr(player.hp), current_level.offset+1, cam_y + 120, 1)
+  rectfill(2+current_level.offset, cam_y +119, 9+current_level.offset, cam_y+125, 0)
+  spr(31, 2 + current_level.offset, cam_y + 118)
+  prtext(tostr(player.hp).." - kills: "..tostr(kills).." - deaths: "..tostr(casualties), current_level.offset+12, cam_y + 120, 7, 0)
 end
 
 function update_high_scores()
@@ -704,18 +711,28 @@ function init_level(level)
   foreach(current_level.bosses, function(b) add(bosses, bossf(b)) end)
 end
 
+function prtext(text, x, y, colour, back)
+ back = back or 0
+ for x_ = -1,1 do
+   for y_ = -1,1 do
+      print(text, x + x_, y + y_, back)
+   end
+ end
+ print(text, x, y, colour)
+end
+
 function draw_title()
   cls()
-  print("tuesday 6th june, 1944", 20, 32)
-  print("d-day", 54, 40)
-  print("press fire to start", 26, 48)
-  print("high scores", 44, 64)
+  prtext("tuesday 6th june, 1944", 20, 32, 7, 3)
+  prtext("d-day", 54, 40, 7, 3)
+  prtext("press fire to start", 26, 48, 7, 3)
+  prtext("high scores", 44, 64, 7, 3)
   local line = 72
   if #high_scores == 0 then
-    print("---- ----", 44, line)
+    prtext("---- ----", 44, line, 7, 3)
   end
   for score in all(high_scores) do
-    print(score.name..": "..tostr(score.score), 44, line)
+    prtext(score.name..": "..tostr(score.score), 44, line, 7, 3)
     line = line + 8
   end
 end
