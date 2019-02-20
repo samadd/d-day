@@ -80,6 +80,34 @@ function bulletf(x, y, vx, vy, dir, shooter)
  return b
 end
 
+function make_smoke(x,y)
+  local s = {}
+  s.x = x
+  s.y = y
+  s.vx = -1 + rnd(2)
+  s.vy = -1 + rnd(2)
+  s.radius = 0.5 + rnd(4)
+  s.max_radius = 4 + rnd(8)
+  s.growth = 0.25 + rnd(0.25)
+  s.alive = true
+  function s:update()
+    self.x = self.x + self.vx
+    self.y = self.y + self.vy
+    self.radius = self.radius + s.growth
+    if self.radius > self.max_radius then
+      self.alive = false
+    end
+  end
+  function s:draw(offset)
+    local col = 5
+    if self.radius > s.max_radius / 2 then
+      col = 6
+    end
+    circfill(self.x + offset, self.y, self.radius, col)
+  end
+  return s
+end
+
 function boss_update(boss)
   if abs(cam_y - boss.y) > 128 then
     return
@@ -148,6 +176,7 @@ player = {}
 nazis = {}
 cannons = {}
 bosses = {}
+smokes = {}
 nazi_spawn_rate = {5, 2}
 casualties = 0
 kills = 0
@@ -233,6 +262,7 @@ function update_cannon(c)
   if (c.fire < 1) then
     c.shoot()
     c.fire = c.f_throttle
+	add(smokes, make_smoke(c.x, c.y))
   end
   local hit = false
   local hitters = {}
@@ -263,6 +293,7 @@ function update_bullet(bullet)
  end
  if cmap(bullet) then
    del(bullets, bullet)
+   add(smokes, make_smoke(bullet.x, bullet.y))
  end
 end
 
@@ -310,6 +341,14 @@ function update_boom(boom)
   boom.sprite = boom.state[boom.tick]
   if boom.tick > #boom.state then
     del(booms, boom)
+	add(smokes, make_smoke(boom.x, boom.y))
+  end
+end
+
+function update_smoke(s)
+  s:update()
+  if not s.alive then
+	del(smokes, s)
   end
 end
 
@@ -338,11 +377,11 @@ end
 
 function kill_soldier(o)
   if o.tick > #o.state then
-	  if o == player then
-      player = spawn()
-      casualties = casualties + 1
-	  end
-	  del(nazis, o)
+    if o == player then
+	  player = spawn()
+	  casualties = casualties + 1
+    end
+    del(nazis, o)
     del(bosses, o)
     if (#nazis < 2) then
       spawn_nazis()
@@ -466,6 +505,8 @@ function update_soldier(o, left, right, up, down, fire1, fire2)
 	  o.tick = 1
 	  o.busy = true
 	  kill_soldier(o)
+	  add(smokes, make_smoke(o.x, o.y))
+	  add(smokes, make_smoke(o.x, o.y))
   end
   if cmap(o, 2) then
     o.state = o.states.drowning
@@ -673,6 +714,7 @@ function game_update()
   foreach(grenades, update_grenade)
   foreach(booms, update_boom)
   foreach(bosses, update_boss)
+  foreach(smokes, update_smoke)
   update_soldier(player, btn(0), btn(1), btn(2), btn(3), btn(4), btn(5))
   local present_cam = max(min(player.y - 96, 424), 0)
   add(cam_positions, present_cam)
@@ -695,6 +737,12 @@ function game_draw()
   foreach(booms, draw_thing)
   foreach(current_level.overheads, draw_thing)
   foreach(bosses, draw_thing)
+  fillp(0b0101101001011010.1)
+  foreach(smokes, function(s)
+      s:draw(current_level.offset)
+    end
+  )
+  fillp()
   draw_hud()
 end
 
