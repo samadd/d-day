@@ -703,11 +703,12 @@ function spawn_nazis()
   if spawny < 8 then
     return
   end
-  for i=0,current_level.nazi_spawn_rate + game_mode.spawn do
-    local spawnx = 16 + (i*(96 / current_level.nazi_spawn_rate))
+  local nazi_spawn_total = current_level.nazi_spawn_rate + game_mode.spawn
+  for i=0,nazi_spawn_total do
+    local spawnx = 16 + (i*(96 / nazi_spawn_total))
     
-    local s = soldierf(5, spawnx, spawny, 1 + rnd(1), 0.1 + rnd(0.5), 1)
-    while cmap(s) do
+    local s = soldierf(5, spawnx, spawny, 0.75 + rnd(1), 0.1 + rnd(0.5), 1)
+    while cmap(s) or cmap(s, 1) or cmap(s, 2) do
        s.y = s.y-4
     end
     s.states = sprstates.nazi
@@ -852,7 +853,7 @@ function draw_title()
   if #high_scores == 0 then
     prtext("---- ----", 44, line + 16, 7, 3)
   else
-    prtext(tostr(scores[1].score), 44, line + 16, 7, 3)  
+    prtext(tostr(high_scores[1].score), 44, line + 16, 7, 3)  
   end
 
 end
