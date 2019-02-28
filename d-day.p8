@@ -14,7 +14,7 @@ function bossf(template)
   boss.dy = 0;
   boss.maxspeed = template.maxspeed
   boss.acc = template.acc or 0.5
-  boss.f_throttle = 5
+  boss.f_throttle = 8
   boss.fire = 0
   boss.tick = 1
   boss.states = template.spritedef
@@ -28,7 +28,7 @@ function bossf(template)
   boss.collection = template.collection
   boss.height = template.sprh or 1
   function boss:shoot()
-    add(self.collection, self.shoot_func(self.x, self.y, 0, 4, 1, self))
+    add(self.collection, self.shoot_func(self.x, self.y, 0, 3, 1, self))
   end
   return boss
 end
@@ -141,6 +141,32 @@ function boss_update(boss)
   end
 end
 
+function boss_update_constant(boss)
+  if abs(cam_y - boss.y) > 128 then
+    return
+  end
+  local left = false
+  local right = false
+  if boss.x < 104 then
+    if boss.dx >= 0 then
+      right = true
+    else
+      left = true
+    end
+  else
+    left = true
+  end
+  if boss.x < 16 then
+    left = false
+    right = true
+  end
+  update_soldier(boss, left, right, false, false, false)
+  if boss.fire == 0 then
+    boss:shoot()
+    boss.fire = boss.f_throttle
+  end
+end
+
 function hitler_update(h)
   if abs(cam_y - h.y) > 128 then
     return
@@ -154,9 +180,9 @@ function hitler_update(h)
   update_soldier(h, false, false, false, false, false)
   if shoot and h.fire == 0 then
     h:shoot()
-	for i = 0,1 do
-	  add(grenades, grenadef(h.x - 4 + (i * 8), h.y + 8, -1 + rnd(2), 1 + rnd(2), 1, h))
-	end
+	  for i = 0,1 do
+	    add(grenades, grenadef(h.x - 4 + (i * 8), h.y + 8, -1 + rnd(2), 1.5 + rnd(1), 1, h))
+	  end
 	h.fire = h.f_throttle
   end
 end
@@ -198,11 +224,11 @@ sprstates = {
 }
 
 game_modes = {
-  {["name"] = "easy", ["hp"] = 8, ["grenades"] = 32, ["spawn"] = 0},
-  {["name"] = "tougher", ["hp"] = 6, ["grenades"] = 20, ["spawn"] = 1},
-  {["name"] = "mad", ["hp"] = 4, ["grenades"] = 12, ["spawn"] = 2},
-  {["name"] = "brexit", ["hp"] = 1, ["grenades"] = 4, ["spawn"] = 3},
-  {["name"] = "cheat", ["hp"] = 100, ["grenades"] = 4, ["spawn"] = 3}
+  {["name"] = "easy", ["hp"] = 8, ["grenades"] = 32, ["spawn"] = 0, ["lives"] = 20},
+  {["name"] = "tougher", ["hp"] = 6, ["grenades"] = 20, ["spawn"] = 1, ["lives"] = 12},
+  {["name"] = "mad", ["hp"] = 4, ["grenades"] = 12, ["spawn"] = 2, ["lives"] = 6},
+  {["name"] = "brexit", ["hp"] = 1, ["grenades"] = 4, ["spawn"] = 3, ["lives"] = 2},
+  {["name"] = "cheat", ["hp"] = 100, ["grenades"] = 4, ["spawn"] = 0, ["lives"] = 100}
 }
 
 bullets = {}
@@ -214,6 +240,7 @@ cannons = {}
 bosses = {}
 smokes = {}
 casualties = 0
+lives = 0
 kills = 0
 current_level = {}
 
@@ -284,21 +311,29 @@ levelstates = {
     ["number"] = 4,
     ["offset"] = 384,
     ["nazi_spawn_rate"] = 5,
-    ["overheads"] = {},
+    ["overheads"] = {
+      {["sprite"]=10, ["x"] = 56, ["y"]=80},
+      {["sprite"]=10, ["x"] = 112, ["y"]=264}
+    },
     ["cannons"]= {
-	  {["sprite"]=102, ["x"]=128, ["y"]=448, ["shoot_func"]=grenadef, ["collection"]=grenades, ["hertz"]=0.5, ["hp"]=5, ["vx"] = -2.5, ["vy"] = 2.5},
+	    {["sprite"]=102, ["x"]=128, ["y"]=448, ["shoot_func"]=grenadef, ["collection"]=grenades, ["hertz"]=0.5, ["hp"]=5, ["vx"] = -2.5, ["vy"] = 2.5},
       {["sprite"]=102, ["x"]=-8, ["y"]=448, ["shoot_func"]=grenadef, ["collection"]=grenades, ["hertz"]=0.5, ["hp"]=5, ["vx"] = 2.5, ["vy"] = 2.5},
-	  {["sprite"]=104, ["x"]=0, ["y"]=368, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = 3, ["vy"] = 0},
-	  {["sprite"]=105, ["x"]=120, ["y"]=384, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = -3, ["vy"] = 0},
-	  {["sprite"]=104, ["x"]=0, ["y"]=408, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = 3, ["vy"] = 0},
-	  
+	    {["sprite"]=104, ["x"]=8, ["y"]=368, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = 3, ["vy"] = 0},
+	    {["sprite"]=105, ["x"]=120, ["y"]=384, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = -3, ["vy"] = 0},
+	    {["sprite"]=104, ["x"]=0, ["y"]=408, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = 3, ["vy"] = 0},
+      {["sprite"]=105, ["x"]=48, ["y"]=232, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = -3, ["vy"] = 0},
+	    {["sprite"]=104, ["x"]=64, ["y"]=232, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = 3, ["vy"] = 0},
+      {["sprite"]=102, ["x"]=56, ["y"]=232, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = 0, ["vy"] = 3},
+      {["sprite"]=102, ["x"]=48, ["y"]=240, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = 0, ["vy"] = 3},
+      {["sprite"]=102, ["x"]=64, ["y"]=240, ["shoot_func"]=bulletf, ["collection"]=bullets, ["hertz"]=0.75, ["hp"]=5, ["vx"] = 0, ["vy"] = 3}
 	},
     ["bosses"] = {
-      {["spritedef"] = sprstates.general, ["x"] = 8, ["y"]=8, ["shoot_func"]=bulletf, ["collection"]=bullets, ["maxspeed"]=4, ["acc"]=1, ["updater"] = boss_update, ["hp"]=10},
-      {["spritedef"] = sprstates.general, ["x"] = 112, ["y"]=20, ["shoot_func"]=grenadef, ["collection"]=grenades, ["maxspeed"]=3.5, ["acc"]=1, ["updater"] = boss_update, ["hp"]=8},
-      {["spritedef"] = sprstates.general, ["x"] = 8, ["y"]=32, ["shoot_func"]=bulletf, ["collection"]=bullets, ["maxspeed"]=3, ["acc"]=1, ["updater"] = boss_update, ["hp"]=6},
+      {["spritedef"] = sprstates.general, ["x"] = 8, ["y"]=16, ["shoot_func"]=bulletf, ["collection"]=bullets, ["maxspeed"]=4, ["acc"]=1, ["updater"] = boss_update, ["hp"]=10},
+      {["spritedef"] = sprstates.general, ["x"] = 112, ["y"]=30, ["shoot_func"]=grenadef, ["collection"]=grenades, ["maxspeed"]=3.5, ["acc"]=1, ["updater"] = boss_update_constant, ["hp"]=8},
+      {["spritedef"] = sprstates.general, ["x"] = 8, ["y"]=30, ["shoot_func"]=grenadef, ["collection"]=grenades, ["maxspeed"]=3.5, ["acc"]=1, ["updater"] = boss_update_constant, ["hp"]=8},
+      {["spritedef"] = sprstates.general, ["x"] = 8, ["y"]=34, ["shoot_func"]=bulletf, ["collection"]=bullets, ["maxspeed"]=3, ["acc"]=1, ["updater"] = boss_update, ["hp"]=6},
       {["spritedef"] = sprstates.general, ["x"] = 112, ["y"]=44, ["shoot_func"]=bulletf, ["collection"]=bullets, ["maxspeed"]=3, ["acc"]=1, ["updater"] = boss_update, ["hp"]=4},
-	  {["spritedef"] = sprstates.hitler, ["x"] = 64, ["y"]=7, ["shoot_func"]=bulletf, ["collection"]=bullets, ["maxspeed"]=0, ["acc"]=0, ["updater"] = hitler_update, ["hp"]=16, ["sprh"]=2}
+	    {["spritedef"] = sprstates.hitler, ["x"] = 64, ["y"]=7, ["shoot_func"]=bulletf, ["collection"]=bullets, ["maxspeed"]=0, ["acc"]=0, ["updater"] = hitler_update, ["hp"]=16, ["sprh"]=2}
     }
   }
 }
@@ -325,7 +360,7 @@ function update_cannon(c)
   local hitters = {}
   local hitcheck = function(b)
     if not hit then
-       hit = beenhit(c, b)
+       hit = beenhit(c, b) and b.shooter == player
        if hit then add(hitters, b) end
     end
   end
@@ -389,6 +424,7 @@ function createbooms(g)
     boom.state = sprstates.boom
     boom.sprite = boom.state[1]
     boom.tick = 1
+    boom.shooter = g.shooter
     define_bounding_box(boom, -2, -2, 10, 10)
     add(booms, boom)
   end
@@ -436,12 +472,17 @@ end
 function kill_soldier(o)
   if o.tick > #o.state then
     if o == player then
-	  player = spawn()
-	  casualties = casualties + 1
+	    lives = lives - 1
+      if lives < 1 then
+        _draw = game_over_draw
+        _update = game_over_update
+      else
+        player = spawn()
+      end
     end
     del(nazis, o)
     del(bosses, o)
-    if (#nazis < 2) then
+    if (#nazis < current_level.nazi_spawn_rate) then
       spawn_nazis()
     end
 	  return
@@ -498,6 +539,11 @@ function update_soldier(o, left, right, up, down, fire1, fire2)
   if o.busy then
     kill_soldier(o)
 	return
+  end
+  if abs(o.y - player.y) > 320 then
+    o.state = {}
+    kill_soldier(o)
+    return
   end
   local lx = o.x
   local ly = o.y
@@ -722,7 +768,7 @@ end
 function draw_hud()
   rectfill(2+current_level.offset, cam_y +119, 9+current_level.offset, cam_y+125, 0)
   spr(31, 2 + current_level.offset, cam_y + 118)
-  prtext(tostr(player.hp).." - kills: "..tostr(kills).." - deaths: "..tostr(casualties), current_level.offset+12, cam_y + 120, 7, 0)
+  prtext(tostr(player.hp).." - kills: "..tostr(kills).." - lives: "..tostr(lives), current_level.offset+12, cam_y + 120, 7, 0)
 end
 
 function update_high_scores()
@@ -755,7 +801,7 @@ function end_level(level)
   del_all(nazis)
   del_all(cannons)
   level += 1
-  if level <= #levelstates then
+  if level <= #levelstates and lives > 0 then
     init_level(level)
   else
     update_high_scores()
@@ -775,6 +821,8 @@ function _update()
 end
 
 function game_update()
+  cam_y = cam_positions[1]
+  del(cam_positions, cam_y)
   foreach(nazis, make_decision)
   foreach(cannons, update_cannon)
   foreach(bullets, update_bullet)
@@ -782,11 +830,9 @@ function game_update()
   foreach(booms, update_boom)
   foreach(bosses, update_boss)
   foreach(smokes, update_smoke)
-  update_soldier(player, btn(0), btn(1), btn(2), btn(3), btn(4), btn(5))
+  if lives > 0 then update_soldier(player, btn(0), btn(1), btn(2), btn(3), btn(4), btn(5)) end
   local present_cam = max(min(player.y - 96, 424), 0)
   add(cam_positions, present_cam)
-  cam_y = cam_positions[1]
-  del(cam_positions, cam_y)
   if player.y < 0 and #bosses == 0 then
     end_level(current_level.number)
   end
@@ -811,6 +857,19 @@ function game_draw()
   )
   fillp()
   draw_hud()
+end
+
+function game_over_draw()
+  game_draw()
+  prtext("game over! hitler keeps france.", 8 + current_level.offset, cam_y + 32, 8, 0)
+  prtext("nicht sehr gut", 35 + current_level.offset, cam_y + 40, 8, 0)
+end
+
+function game_over_update()
+  game_update()
+  if btnp(4) then
+    end_level(current_level.number)
+  end
 end
 
 function init_level(level)
@@ -876,10 +935,10 @@ function update_title()
   if btnp(4) then
     _update = game_update
     _draw = game_draw
-    casualties = 0
+    lives = game_mode.lives
     kills = 0
     player = spawn()
-    init_level(1)
+    init_level(4)
   end
 end
 
